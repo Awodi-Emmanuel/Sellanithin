@@ -9,6 +9,18 @@ from rest_framework.mixins import (
     RetrieveModelMixin,
 )
 
+from core.models.abstration import Product
+from core.models.model_serializer import ProductSerializer
 
-class ProductViewset(YkGenericViewSet):
-    pass
+
+class ProductViewset(
+    YkGenericViewSet,
+    ListModelMixin,
+    UpdateModelMixin,
+    DestroyModelMixin,
+    CreateModelMixin,
+    RetrieveModelMixin,
+):
+    queryset = Product.objects.all()
+    
+    serializer_class = ProductSerializer
