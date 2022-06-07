@@ -10,6 +10,7 @@ class CategorySerializer(ModelSerializer):
     class Meta:
         model = Category
         fields = (
+            "id",
             "name",
             "slug"
         )   
@@ -30,7 +31,5 @@ class ProductSerializer(ModelSerializer):
             "thumbnail",
             "stock",
             "available",
-            "date_added",
-            "updated"
         )
         
