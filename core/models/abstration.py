@@ -82,11 +82,11 @@ class Product(models.Model):
         
         
 class Cart(models.Model):
-    user = models.ForeignKey(Users, on_delete=models.SET_NULL, null=True, blank=True)
-    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
-    quantity = models.IntegerField(null=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    user: models.ForeignKey = models.ForeignKey(Users, on_delete=models.SET_NULL, null=True, blank=True)
+    product: models.ForeignKey = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
+    quantity: models.IntegerField = models.IntegerField(null=False)
+    created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+    updated_at: models.DateField = models.DateTimeField(auto_now=True)
     
     class Meta:
         abstract = True
@@ -100,15 +100,16 @@ class Cart(models.Model):
    
     
 class DeliveryCost(models.Model):
-    status = models.CharField(max_length=7,
-                              choices=(('Active', 'active'), ('Passive', 'passive')),
+    status: models.CharField = models.CharField(max_length=7,
+                              choices=(('Active', 'active'),
+                                       ('Passive', 'passive')),
                               default="passive",
                               null=False)
-    cost_per_delivery = models.DecimalField(max_digits=10, decimal_places=2, null=False)
-    cost_per_product = models.DecimalField(max_digits=10, decimal_places=2, null=False)
-    fixed_cost = models.DecimalField(max_digits=10, decimal_places=2, null=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    cost_per_delivery: models.DecimalField = models.DecimalField(max_digits=10, decimal_places=2, null=False)
+    cost_per_product: models.DecimalField = models.DecimalField(max_digits=10, decimal_places=2, null=False)
+    fixed_cost: models.DecimalField = models.DecimalField(max_digits=10, decimal_places=2, null=False)
+    created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+    updated_at: models.DecimalField = models.DateTimeField(auto_now=True)
     
     class Meta:
         abstract = True
@@ -123,21 +124,21 @@ class DeliveryCost(models.Model):
  
     
 class Campaign(models.Model):
-    discount_type = models.CharField(max_length=6,
+    discount_type: models.CharField = models.CharField(max_length=6,
                                      choices=(('Amount', 'amount'), ('Rate', 'rate')),
                                      default="rate",
                                      null=False)
-    discount_rate = models.IntegerField(null=True, blank=True)
-    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    min_purchased_items = models.IntegerField(null=False)
-    apply_to = models.CharField(max_length=8,
+    discount_rate: models.IntegerField = models.IntegerField(null=True, blank=True)
+    discount_amount: models.DecimalField = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    min_purchased_items: models.IntegerField = models.IntegerField(null=False)
+    apply_to: models.CharField = models.CharField(max_length=8,
                                 choices=(('Product', 'product'), ('Category', 'category')),
                                 default="product",
                                 null=False)
-    target_product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
-    target_category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    target_product: models.ForeignKey = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
+    target_category: models.ForeignKey = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+    updated_at: models.DateTimeField = models.DateTimeField(auto_now=True)
 
     class Meta:
         abstract = True
@@ -155,10 +156,10 @@ class Campaign(models.Model):
         
         
 class Coupon(models.Model):
-    minimum_cart_amount = models.DecimalField(max_digits=10, decimal_places=2, null=False)
-    discount_rate = models.IntegerField(null=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    minimum_cart_amount: models.DecimalField = models.DecimalField(max_digits=10, decimal_places=2, null=False)
+    discount_rate: models.IntegerField = models.IntegerField(null=False)
+    created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+    updated_at: models.DateTimeField = models.DateTimeField(auto_now=True)
 
     class Meta:
         abstract = True
