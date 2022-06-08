@@ -3,6 +3,12 @@ from .abstration import TempCode as AbstractTempCode
 from .abstration import Users as AbstractUsers
 from .abstration import Category as AbstractCategory
 from .abstration import Product as AbstractProduct
+from .abstration import Cart as AbstractCart
+from .abstration import DeliveryCost as AbstractDeliveryCost
+from .abstration import Campaign as AbstractCampaign
+
+
+
 
 
 
@@ -33,4 +39,13 @@ class Category(AbstractCategory):
     pass
 
 class Product(AbstractProduct):
+    pass
+
+class Cart(AbstractCart):
+    pass
+
+class DeliveryCost(AbstractDeliveryCost):
+    pass
+
+class Campaign(AbstractCampaign):
     pass
