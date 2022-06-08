@@ -9,8 +9,21 @@ from rest_framework.mixins import (
     RetrieveModelMixin,
 )
 
-from core.models.abstration import Category, Product
-from core.models.model_serializer import ProductSerializer, CategorySerializer
+from django.contrib.auth import get_user_model
+
+from core.models.implementation import Category, Product
+from core.models.model_serializer import(
+    ProductSerializer,
+    CategorySerializer,
+    UserSerializer,
+)
+
+User = get_user_model()
+
+class AuthViewset(YkGenericViewSet):
+    queryset = User.objects.all()
+    
+    serializer = UserSerializer
 
 
 class ProductViewset(
@@ -22,37 +35,38 @@ class ProductViewset(
     RetrieveModelMixin,
 ):
     queryset = Product.objects.all()
+    
     serializer_class = ProductSerializer
     
     """Create a Product function"""
     
-    def post(self, request, *args, **kwargs):
+    # def post(self, request, *args, **kwargs):
         
-        return self.create(request, *args, **kwargs)
+    #     return self.create(request, *args, **kwargs)
     
-    """Get all/list Products Function"""
+    # """Get all/list Products Function"""
     
-    def get(self, request, *args, **kwargs):
+    # def get(self, request, *args, **kwargs):
         
-        return self.list(request, *args, **kwargs)
+    #     return self.list(request, *args, **kwargs)
      
-    """Get a single Product by an id Function"""
+    # """Get a single Product by an id Function"""
     
-    def get(self, request, *args, **kwargs):
+    # def get(self, request, *args, **kwargs):
         
-        return self.retrieve(request, *args, **kwargs)
+    #     return self.retrieve(request, *args, **kwargs)
     
-    """update a Product Function"""
+    # """update a Product Function"""
     
-    def put(self, request, *args, **kwargs):
+    # def put(self, request, *args, **kwargs):
         
-        return self.update(request, *args, **kwargs)
+    #     return self.update(request, *args, **kwargs)
     
-    """delete a Product Function"""
+    # """delete a Product Function"""
     
-    def delete(self, request, *args, **kwargs):
+    # def delete(self, request, *args, **kwargs):
         
-        return self.destroy(request, *args, **kwargs)
+    #     return self.destroy(request, *args, **kwargs)
     
     
 class CategoryViewset(

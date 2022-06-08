@@ -18,6 +18,8 @@ class Users(AbstractUser):
     REQUIRED_FIELDS = [
         'phone_number'
     ]
+    class Meta:
+        abstract = True  
     
 class TempCode(models.Model):
     TYPES = [
@@ -41,63 +43,40 @@ class TempCode(models.Model):
 # Create your models here.
 class Category(models.Model):
     name: models.CharField = models.CharField(max_length=255)
+    parent_category_id: models.IntegerField = models.IntegerField(null=True, blank=True)
     slug: models.SlugField = models.SlugField(unique=True)
+    created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+    updated_at: models.DateTimeField = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ('name',)
-
+        abstract = True
+      
     def __str__(self):
-        return self.name
-
-    def get_absolute_url(self):
-        return f'/{self.slug}/'
-                        
+        return "{} - {} - {} - {}".format(self.name,
+                                          self.slug,
+                                          self.parent_category_id,
+                                          self.created_at,
+                                          self.updated_at)                
+    
+                            
 class Product(models.Model):
     category: models.ForeignKey = models.ForeignKey(Category, related_name="products", on_delete=models.CASCADE)
     name: models.CharField(max_length=255)
     slug: models.CharField = models.SlugField(unique=True)
     description: models.TextField = models.TextField(blank=True, null=True)
-    price: models.DecimalField = models.DecimalField(max_digits=50, decimal_places=2)
-    image: models.ImageField = models.ImageField(upload_to='uploads/', blank=True, null=True)
-    thumbnail: models.ImageField = models.ImageField(upload_to='uploads/', blank=True, null=True)
+    price: models.DecimalField = models.DecimalField(max_digits=50, decimal_places=2) 
     stock: models.IntegerField = models.IntegerField()
     available: models.BooleanField = models.BooleanField(default=True)
     date_added: models.DateTimeField = models.DateTimeField(auto_now_add=True)
     updated: models.DateTimeField = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ('-date_added',)
-
+        abstract = True
+       
     def __str__(self):
-        return self.name
-
-    def get_absolute_url(self):
-        return f'/{self.category.slug}/{self.slug}/'
-
-    def get_prod_image(self):
-        if self.image:
-            return 'http://127.0.0.1:8000' + self.image.url 
-        return ''
-
-    def get_prod_thumbnail(self):
-        if self.thumbnail:
-            return 'http://127.0.0.1:8000' + self.thumbnail.url 
-        else:
-            if self.image:
-                self.thumbnail = self.make_thumbnail(self.image)
-                self.save()
-
-                return 'http://127.0.0.1:8000' + self.thumbnail.url 
-            else:
-                return ''
-
-    def make_thumbnail(self, image, size=(300, 200)):
-        img = Image.open(image)
-        img.convert('RGB')
-        img.thumbnail(size)
-
-        thumb_io = BytesIO()
-        img.save(thumb_io, 'JPEG', quality=85)
-
-        thumbnail = File(thumb_io, name=image.name)
-        return thumbnail
+        return "{} - {} - {} - {} - {}".format(self.category,
+                                               self.title,
+                                               self.price,
+                                               self.created_at,
+                                               self.updated_at)   
+    
