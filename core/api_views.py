@@ -2,8 +2,16 @@ from email import message
 import logging
 # from math import perm
 import traceback
+from pytz import timezone
 
 from requests import request
+
+from core.pagination import MetadataPagination, MetadataPaginatorInspector
+from django.utils.decorators import method_decorator
+from django.utils import timezone
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AbstractBaseUser
+from rest_framework.authtoken.models import Token
 from core.custom_classes import YkGenericViewSet
 from rest_framework.views import APIView
 from django.contrib.auth import login, logout
@@ -51,7 +59,9 @@ from .responses import(
 )
 
 from .input_serializer import(
-    SignupInputSerializer
+    SignupInputSerializer,
+    ConfirmInputSerializer,
+    ValidateOTPInputSerializer
 )
 
 from Ecom import settings
@@ -80,13 +90,14 @@ class AuthViewset(YkGenericViewSet):
             rcv_ser = SignupInputSerializer(data=self.request.data)
             if rcv_ser.is_valid():
                 user = rcv_ser.create_user()
+               
                 if not user.is_active:
                     code = "12345"
                     code_otp = "546387"
-                    
+                    print(code)
                     fe_url = settings.FRONTEND_URL
                     TempCode.objects.create(code=code, user=user, type="signup")
-                    TempCode.objects.create(code_otp=code_otp, user=user, type="signup")
+                    TempCode.objects.create(code_otp=code_otp, user=user, type="signup_otp")
                     
                     confirm_url = (
                         fe_url 
@@ -120,8 +131,117 @@ class AuthViewset(YkGenericViewSet):
                     )
         except Exception as e:
             logger.error(traceback.print_exc())
-            return BadRequestResponse(str(e), "Uknown", request=self.request)            
-
+            return BadRequestResponse(str(e), "Uknown", request=self.request)          
+        
+    @swagger_auto_schema(
+        operation_summary="Confirm",
+        operation_description="Confirm your email",
+        responses={
+            200: EmptySerializer(),
+            400: BadRequestResponseSerializer(),
+            404: NotFoundResponseSerializer(),
+        },
+        request_body=ConfirmInputSerializer()
+    )
+    @action(methods=["POST"], detail=False,)
+    
+    def confirm(self, request, *args, **kwargs):
+        try:
+            rcv_seria = ConfirmInputSerializer(data=self.request.data)
+            if rcv_seria.is_valid():
+                tmp_code = (
+                    TempCode.objects.filter(
+                        code=crypt.encrypt(rcv_seria._validated_data["code"]),
+                        user__email=crypt.encrypt(rcv_seria.validated_data["email"]),
+                        is_used = False,
+                        expires__gte=timezone.now(),
+                    )
+                    .select_related()
+                    .first()
+                )
+                if tmp_code:
+                    tmp_code.user.email.is_verified = True
+                    tmp_code.user.save()
+                    tmp_code.is_used = True
+                    tmp_code.save()
+                    
+                    user_ser = UserSerializer(tmp_code.user)
+                    
+                    message = {
+                        "subject": _("Welcome To ecoms"),
+                        "email": tmp_code.user.email,
+                        "username": tmp_code.user.username
+                    }
+                    
+                    # TODO Apache Kafka
+                    
+                    return GoodResponse(user_ser.data)
+                else:
+                    return NotFoundResponse(
+                        "TempCode not found or invalid",
+                        "TempCode",
+                        request=self.request
+                    )
+            else:
+                return BadRequestResponse(
+                    "Unable to confirm",
+                    "confirm_error",
+                    request=self.request,
+                )
+        except Exception as e:
+            logger.error(traceback.print_exc())
+            return BadRequestResponse(str(e), "Unkonwn", request=self.request) 
+        
+        
+    @swagger_auto_schema(
+        operation_summary="Validate Otp",
+        operation_description="Validate your OTP",
+        responses={
+            200: EmptySerializer(),
+            400: BadRequestResponseSerializer(),
+            404: NotFoundResponseSerializer(),
+        },
+        request_body=ValidateOTPInputSerializer(),
+    )         
+    @action(methods=["POST"], detail=False, url_path="validate/otp")
+    
+    def validate_otp(self, request, *args, **kwargs):
+        try:
+            rcv_ser = ValidateOTPInputSerializer(data=self.request.data)
+            if rcv_ser.is_valid():
+                tmp_code = (
+                    TempCode.objects.filter(
+                        code= crypt.decrypt(rcv_ser.validated_data["otp"]),
+                        user__email = crypt.decrypt(rcv_ser.validated_data["email"]),
+                        is_used = False,
+                        expires__gte=timezone.now()
+                    )
+                    .select_related()
+                    .first()
+                )
+                
+                if tmp_code:
+                    tmp_code.user.is_active = True
+                    tmp_code.user.save()
+                    tmp_code.user.is_used = True
+                    tmp_code.save()
+                    
+                    user_ser = UserSerializer(tmp_code.user)
+                    
+                    return GoodResponse(user_ser.data)
+                
+                else:
+                    return NotFoundResponse("OTP not found or invalid", "OTP", request=self.request)
+                
+            else:
+                return BadRequestResponse(
+                    "Unable to validate OTP",
+                    "otp_validation_error",
+                    data=rcv_ser.errors,
+                    request=self.request,
+                )   
+        except Exception as e:
+            return BadRequestResponse(str(e), "Uknown", request=self.request)
 
 
 class ProductViewset(

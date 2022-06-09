@@ -1,17 +1,17 @@
 from datetime import datetime, timedelta
 from xml.dom import ValidationErr
 
+import pytz
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractBaseUser
 from django.core.validators import validate_email as dj_validate_email
-from django.forms import CharField, EmailField
-from rest_framework.serializers import Serializer
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from rest_framework.fields import *
 from rest_framework.serializers import Serializer, ValidationError
 
+from core.models import TempCode
 User = get_user_model()
 
 class SignupInputSerializer(Serializer):
@@ -45,7 +45,7 @@ class SignupInputSerializer(Serializer):
         
         return email
     
-    def create_user(self, *args):
+    def create_user(self):
         username = self.validated_data["username"]
         email = self.validated_data["email"]
         phone = self.validated_data["phone"]
@@ -62,7 +62,7 @@ class SignupInputSerializer(Serializer):
                 phone_number=phone,
                 first_name=first_name,
                 last_name=last_name,
-                password=password
+                password=password,
             )
             user.is_active = False
             user.save()
@@ -71,3 +71,37 @@ class SignupInputSerializer(Serializer):
             raise ValidationErr("User already exist")
         
         return user
+    
+    
+class SigninInputSerializer(Serializer):
+    email = EmailField(required=False, allow_null=True)
+    username = CharField(required=False, allow_null=True)
+    password = CharField
+    
+    class Meta:
+        ref_name = None
+        
+    def validate_password(self, *args):
+        email = self.initial_data.get("email")
+        username = self.initial_data.get("username")
+        password =  self.initial_data.get("password")
+        
+        if not email and not username:
+            raise ValidationError(_("(username or email) fields should be present."))
+        
+        return password
+    
+class ConfirmInputSerializer(Serializer):
+    email = EmailField()
+    code = CharField()
+      
+    class Meta:
+        ref_name = None  
+        
+class  ValidateOTPInputSerializer(Serializer):
+    email = EmailField()
+    otp = CharField()
+    
+    class Meta:
+        ref_name = None        
+            
