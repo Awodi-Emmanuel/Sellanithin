@@ -1,12 +1,17 @@
-from cmath import e
+from email import message
 import logging
 # from math import perm
 import traceback
 
 from requests import request
-
 from core.custom_classes import YkGenericViewSet
 from rest_framework.views import APIView
+from django.contrib.auth import login, logout
+import logging
+from django.utils.translation import gettext as _
+from rest_framework import permissions
+from uuid import uuid4
+from datetime import timedelta, datetime
 from rest_framework.viewsets import ViewSet, ModelViewSet, GenericViewSet
 from rest_framework.mixins import (
     ListModelMixin,
@@ -39,6 +44,7 @@ from .responses_serialisers import (
 )
 
 from .responses import(
+    CreatedResponse,
     GoodResponse,
     BadRequestResponse,
     NotFoundResponse  
@@ -48,6 +54,8 @@ from .input_serializer import(
     SignupInputSerializer
 )
 
+from Ecom import settings
+from utils import base, crypt
 
 logger = logging.getLogger()
 
@@ -76,8 +84,34 @@ class AuthViewset(YkGenericViewSet):
                     code = "12345"
                     code_otp = "546387"
                     
+                    fe_url = settings.FRONTEND_URL
+                    TempCode.objects.create(code=code, user=user, type="signup")
+                    TempCode.objects.create(code_otp=code_otp, user=user, type="signup")
+                    
+                    confirm_url = (
+                        fe_url 
+                        + f"/confirm?code={crypt.encrypt(code)}&firstname={crypt.encrypt(user.first_name)}&lastname={crypt.encrypt(user.last_name)}&email={crypt.encrypt(user.email)}"
+                    )
+                    
+                    message = {
+                        "subject": _("Confirm you Email"),
+                        "email": user.email,
+                        "confirm_url": confirm_url,
+                        "code": code_otp,
+                        "username": user.username,
+                    }
+                    # TODO: Create Apache Kafka
+                    
+                    message = {
+                        "subject": _("Confirm Your Email"),
+                        "phone": user.email,
+                        "code": code_otp,
+                        "username": user.username
+                    }
+                    
+                    # TODO: Create Apache Kafka
                 else:
-                    print("hello")
+                    return CreatedResponse({"message": "User created"})
             else:
                 return BadRequestResponse(
                         "Unable to confirm",

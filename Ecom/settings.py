@@ -137,6 +137,8 @@ REST_FRAMEWORK = {
 
 STATIC_URL = 'static/'
 
+FRONTEND_URL = "http://Ecoms.ng.org"
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
