@@ -71,7 +71,13 @@ class AuthViewset(YkGenericViewSet):
         try:
             rcv_ser = SignupInputSerializer(data=self.request.data)
             if rcv_ser.is_valid():
-                print("hello")
+                user = rcv_ser.create_user()
+                if not user.is_active:
+                    code = "12345"
+                    code_otp = "546387"
+                    
+                else:
+                    print("hello")
             else:
                 return BadRequestResponse(
                         "Unable to confirm",

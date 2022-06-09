@@ -61,7 +61,7 @@ class Category(models.Model):
                             
 class Product(models.Model):
     category: models.ForeignKey = models.ForeignKey(Category, related_name="products", on_delete=models.CASCADE)
-    name: models.CharField(max_length=255)
+    name: models.CharField = models.CharField(max_length=255)
     slug: models.CharField = models.SlugField(unique=True)
     description: models.TextField = models.TextField(blank=True, null=True)
     price: models.DecimalField = models.DecimalField(max_digits=50, decimal_places=2) 
@@ -75,8 +75,12 @@ class Product(models.Model):
        
     def __str__(self):
         return "{} - {} - {} - {} - {}".format(self.category,
-                                               self.title,
+                                               self.name,
+                                               self.slug,
+                                               self.description,
                                                self.price,
+                                               self.stock,
+                                               self.available,
                                                self.created_at,
                                                self.updated_at)   
         
