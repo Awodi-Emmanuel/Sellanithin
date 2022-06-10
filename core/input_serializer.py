@@ -1,5 +1,7 @@
+
 from datetime import datetime, timedelta
-from xml.dom import ValidationErr
+from typing import Union
+from uuid import uuid4
 
 import pytz
 from django.contrib.auth import get_user_model
@@ -12,39 +14,43 @@ from rest_framework.fields import *
 from rest_framework.serializers import Serializer, ValidationError
 
 from core.models import TempCode
+
 User = get_user_model()
+
 
 class SignupInputSerializer(Serializer):
     username = CharField()
     first_name = CharField()
     last_name = CharField()
-    email = EmailField()
     phone = CharField()
+    email = EmailField()
     password = CharField()
-    
+    # invite_code = CharField(required=False)
+
     class Meta:
-        ref_name  = None
-        
+        ref_name = None
+
     def validate_username(self, *args):
         username = self.initial_data["username"]
         u = User.objects.filter(username=username).first()
-        if u:
-         #and u.date_joined >= datetime(2020, 1, 1, tzinfo=pytz.UTC):
-            raise ValidationErr("This username is already used.")
+        if u: 
+        #and u.date_joined >= datetime(2020, 1, 1, tzinfo=pytz.UTC):
+            raise ValidationError("Username is already used.")
         return username
-    
+
     def validate_email(self, *args):
         email = self.initial_data["email"]
         try:
             dj_validate_email(email)
             user = User.objects.filter(email=email).first()
-            if user:
-                raise ValidationErr("This email is already used.")
-        except ValidationErr as e:
+            if user: 
+            # and user.date_joined >= datetime(2020, 1, 1, tzinfo=pytz.UTC):
+                raise ValidationError("This email already used")
+        except ValidationError as e:
             raise e
-        
+
         return email
-    
+
     def create_user(self):
         username = self.validated_data["username"]
         email = self.validated_data["email"]
@@ -52,23 +58,23 @@ class SignupInputSerializer(Serializer):
         first_name = self.validated_data["first_name"]
         last_name = self.validated_data["last_name"]
         password = self.validated_data["password"]
-        
+
         user = User.objects.filter(email=email).first()
-        
+
         if not user:
             user = User.objects.create_user(
                 username=username,
+                password=password,
                 email=email,
                 phone_number=phone,
                 first_name=first_name,
                 last_name=last_name,
-                password=password,
             )
             user.is_active = False
             user.save()
             
         else:
-            raise ValidationErr("User already exist")
+            raise ValidationError("User already exist")
         
         return user
     
@@ -103,5 +109,19 @@ class  ValidateOTPInputSerializer(Serializer):
     otp = CharField()
     
     class Meta:
-        ref_name = None        
+        ref_name = None  
+        
+class ResendOTPInputSerializser(Serializer):
+    email = EmailField()
+   
+    
+    class Meta:
+        ref_name = None   
+        
+class ResendCodeInputSerializer(Serializer):
+    email = EmailField()
+  
+    
+    class Meta:
+        ref_name = None                   
             

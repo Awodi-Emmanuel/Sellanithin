@@ -10,7 +10,7 @@ from .implementation import Coupon
 __all__ = (
     'Product',
     'Category',
-    'Users'
+    'Users',
     'TempCode',
     "Cart",
     "DeliveryCost",
