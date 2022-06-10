@@ -60,6 +60,7 @@ from .responses import(
 )
 
 from .input_serializer import(
+    SigninInputSerializer,
     SignupInputSerializer,
     ConfirmInputSerializer,
     ValidateOTPInputSerializer,
@@ -377,7 +378,28 @@ class AuthViewset(YkGenericViewSet, UpdateModelMixin):
                     ) 
             
         except Exception as e:
-            return BadRequestResponse(str(e), "Unkown", request=self.request)   
+            return BadRequestResponse(str(e), "Unkown", request=self.request) 
+        
+    @swagger_auto_schema(
+        operation_summary="signin",
+        operation_description="signin with your email",
+        responses={
+            200: EmptySerializer(),
+            400: BadRequestResponseSerializer(),
+            404: NotFoundResponseSerializer(),
+        },
+        request_body=SigninInputSerializer(),
+    )
+    
+    @action(methods=["POST"], detail=False,)
+    
+    def signin(self, request, *args, **kwargs):
+        try:
+            rcv_ser = SigninInputSerializer(data=self.request.data)
+            if rcv_ser.is_valid():
+                print(rcv_ser)
+        except Exception as e:
+            return BadRequestResponse(str(e), "Unknown", request=self.request)                  
                     
 
 class ProductViewset(
