@@ -336,7 +336,7 @@ class AuthViewset(YkGenericViewSet, UpdateModelMixin):
         },
         request_body=ResendCodeInputSerializer(),
     )
-    @action(methods=["POST"], detail=False,)
+    @action(methods=["POST"], detail=False, permission_classes=[permissions.IsAuthenticated])
     
     
     def resend(self, request, *args, **kwargs):
@@ -412,7 +412,7 @@ class AuthViewset(YkGenericViewSet, UpdateModelMixin):
         request_body=SigninInputSerializer(),
     )
     
-    @action(methods=["POST"], detail=False, permission_classes=[permissions.IsAuthenticated])
+    @action(methods=["POST"], detail=False,)
     
     def signin(self, request, *args, **Kwargs):
         try:
@@ -425,7 +425,6 @@ class AuthViewset(YkGenericViewSet, UpdateModelMixin):
                     Q(email=email) | Q(username=username)
                 ).first() 
                 if user:
-                    print(user)
                     if user.is_active:
                         if user.check_password(password):
                             cookie = UserSerializer().get_tokens(user)
@@ -460,6 +459,25 @@ class AuthViewset(YkGenericViewSet, UpdateModelMixin):
         except Exception as e:
             traceback.print_exc()
             return BadRequestResponse(str(e), "Unknown", request=self.request)
+        
+        
+        
+    @swagger_auto_schema(
+        operation_summary="signout",
+        operation_description="Signout",
+        responses={
+            200: EmptySerializer(),
+            400: BadRequestResponseSerializer(),
+        },
+    )
+    @action(methods=["methods"], detail=False, permission_classes=[permissions.IsAuthenticated])
+    
+    def signout(self, request, *args, **kwargs):
+        try:
+            logout(self.request)
+            return GoodResponse({})
+        except Exception as e:
+            return BadRequestResponse(str(e), "Unknown", request=self.request)        
         
 class ProductViewset(
     YkGenericViewSet,
