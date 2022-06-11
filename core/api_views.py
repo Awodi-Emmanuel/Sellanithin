@@ -1,5 +1,6 @@
 from email import message
 import logging
+from queue import Empty
 from select import select
 # from math import perm
 import traceback
@@ -65,7 +66,8 @@ from .input_serializer import(
     ConfirmInputSerializer,
     ValidateOTPInputSerializer,
     ResendOTPInputSerializser,
-    ResendCodeInputSerializer
+    ResendCodeInputSerializer,
+    ResetInputSerializer
 )
 
 from Ecom import settings
@@ -336,7 +338,7 @@ class AuthViewset(YkGenericViewSet, UpdateModelMixin):
         },
         request_body=ResendCodeInputSerializer(),
     )
-    @action(methods=["POST"], detail=False,)
+    @action(methods=["POST"], detail=False, permission_classes=[permissions.IsAuthenticated])
     
     
     def resend(self, request, *args, **kwargs):
@@ -412,7 +414,7 @@ class AuthViewset(YkGenericViewSet, UpdateModelMixin):
         request_body=SigninInputSerializer(),
     )
     
-    @action(methods=["POST"], detail=False, permission_classes=[permissions.IsAuthenticated])
+    @action(methods=["POST"], detail=False,)
     
     def signin(self, request, *args, **Kwargs):
         try:
@@ -425,7 +427,6 @@ class AuthViewset(YkGenericViewSet, UpdateModelMixin):
                     Q(email=email) | Q(username=username)
                 ).first() 
                 if user:
-                    print(user)
                     if user.is_active:
                         if user.check_password(password):
                             cookie = UserSerializer().get_tokens(user)
@@ -460,6 +461,132 @@ class AuthViewset(YkGenericViewSet, UpdateModelMixin):
         except Exception as e:
             traceback.print_exc()
             return BadRequestResponse(str(e), "Unknown", request=self.request)
+        
+        
+        
+    @swagger_auto_schema(
+        operation_summary="signout",
+        operation_description="Signout",
+        responses={
+            200: EmptySerializer(),
+            400: BadRequestResponseSerializer(),
+        },
+    )
+    @action(methods=["methods"], detail=False, permission_classes=[permissions.IsAuthenticated])
+    
+    def signout(self, request, *args, **kwargs):
+        try:
+            logout(self.request)
+            return GoodResponse({})
+        except Exception as e:
+            return BadRequestResponse(str(e), "Unknown", request=self.request)   
+        
+    @swagger_auto_schema(
+        operation_summary="Reset init",
+        operation_description="Init the reset password",
+        responses={
+            200: EmptySerializer(),
+            400: BadRequestResponseSerializer(),
+            404: NotFoundResponseSerializer(),
+        },
+        request_body=ResetInputSerializer(),
+    )
+    @action(methods=["POST"], detail=False, url_path="reset/init")
+    
+    def reset_init(self, request, *args, **kwargs):
+        try:
+            rcv_ser = ResetInputSerializer(data=self.request.data)
+            if rcv_ser.is_valid():
+                email = rcv_ser.validated_data.get("email")
+                user = User.objects.filter(email=email).first()
+                
+                if user:
+                    code = "12345"
+                    TempCode.objects.create(
+                        code=code, user=user, type="reset"
+                    )
+                    
+                    email_encoded = base.url_safe_encode(user.email)
+                    code_encoded = base.url_safe_encode(code)
+                    
+                    fe_url = settings.FRONTEND_URL
+                    confirm_url = (
+                        fe_url
+                        + f"/reset?token={code_encoded}&email={email_encoded}"
+                    )
+                    
+                    messge = {
+                        "subject": _("confirm you email"),
+                        "email": user.email,
+                        "reset_url": confirm_url,
+                        "user": user.username,
+                    }
+                    
+                    # TODO Create Apache Kafka Notification
+                    return GoodResponse({
+                        "successful"
+                    })
+            else:
+                return BadRequestResponse(
+                    "Unable to init the password reset",
+                    "init_reset_error",
+                    request=self.request
+                )
+                
+        except Exception as e:
+            return BadRequestResponse(str(e), "Unkonwn", request=self.request) 
+        
+    @swagger_auto_schema(
+        operation_summary="Reset Code Check",
+        operation_description="Check if the reset code is valid",
+        responses={
+            200: EmptySerializer(),
+            400: BadRequestResponseSerializer(),
+            404: NotFoundResponseSerializer(),
+        },
+        request_body=ConfirmInputSerializer(),
+    )           
+    @action(methods=["POST"], detail=False, url_path="reset/validate/token")
+    
+    def reset_password_validate_token(self, request, *args, **kwargs):
+        try:
+            rcv_ser = ConfirmInputSerializer(data=self.request.data)
+            if rcv_ser.is_valid():
+                email: str = rcv_ser.validated_data["email"]
+                code: str = rcv_ser.validated_data["code"]
+                
+                token_decoded =  base.url_safe_decode(code)
+                email_decoded = base.url_safe_decode(email)
+                
+                tmp_codes = (
+                    TempCode.objects.filter(
+                        code=token_decoded,
+                        user__email=email_decoded,
+                        is_used=False,
+                        expires__gte=timezone.now() 
+                    )
+                    .select_related()
+                    .first()
+                )
+                
+                if tmp_codes:
+                    tmp_codes.user.is_active = True
+                    tmp_codes.user.save()
+                    user_ser = UserSerializer(tmp_codes.user)
+                    return GoodResponse(user_ser.data)
+                else:
+                    return NotFoundResponse(
+                        "Expired or Invalid Token", "InvalidToken", request=self.request
+                    )
+            else: 
+                return BadRequestResponse(
+                    "Unable to check reset code",
+                    "invalid_data",
+                    data=rcv_ser.errors
+                )
+                        
+        except Exception as e:
+            return BadRequestResponse(str(e), "Unknown", request=self.request)             
         
 class ProductViewset(
     YkGenericViewSet,

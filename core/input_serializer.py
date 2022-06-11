@@ -124,4 +124,9 @@ class ResendCodeInputSerializer(Serializer):
     
     class Meta:
         ref_name = None                   
-            
+
+class ResetInputSerializer(Serializer):
+    email = EmailField()
+    
+    class Meta:
+        ref_name = None       
