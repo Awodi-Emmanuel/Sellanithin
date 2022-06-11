@@ -1,5 +1,6 @@
 from email import message
 import logging
+from queue import Empty
 from select import select
 # from math import perm
 import traceback
@@ -533,8 +534,59 @@ class AuthViewset(YkGenericViewSet, UpdateModelMixin):
                 )
                 
         except Exception as e:
-            return BadRequestResponse(str(e), "Unkonwn", request=self.request)        
-             
+            return BadRequestResponse(str(e), "Unkonwn", request=self.request) 
+        
+    @swagger_auto_schema(
+        operation_summary="Reset Code Check",
+        operation_description="Check if the reset code is valid",
+        responses={
+            200: EmptySerializer(),
+            400: BadRequestResponseSerializer(),
+            404: NotFoundResponseSerializer(),
+        },
+        request_body=ConfirmInputSerializer(),
+    )           
+    @action(methods=["POST"], detail=False, url_path="reset/validate/token")
+    
+    def reset_password_validate_token(self, request, *args, **kwargs):
+        try:
+            rcv_ser = ConfirmInputSerializer(data=self.request.data)
+            if rcv_ser.is_valid():
+                email: str = rcv_ser.validated_data["email"]
+                code: str = rcv_ser.validated_data["code"]
+                
+                token_decoded =  base.url_safe_decode(code)
+                email_decoded = base.url_safe_decode(email)
+                
+                tmp_codes = (
+                    TempCode.objects.filter(
+                        code=token_decoded,
+                        user__email=email_decoded,
+                        is_used=False,
+                        expires__gte=timezone.now() 
+                    )
+                    .select_related()
+                    .first()
+                )
+                
+                if tmp_codes:
+                    tmp_codes.user.is_active = True
+                    tmp_codes.user.save()
+                    user_ser = UserSerializer(tmp_codes.user)
+                    return GoodResponse(user_ser.data)
+                else:
+                    return NotFoundResponse(
+                        "Expired or Invalid Token", "InvalidToken", request=self.request
+                    )
+            else: 
+                return BadRequestResponse(
+                    "Unable to check reset code",
+                    "invalid_data",
+                    data=rcv_ser.errors
+                )
+                        
+        except Exception as e:
+            return BadRequestResponse(str(e), "Unknown", request=self.request)             
         
 class ProductViewset(
     YkGenericViewSet,
