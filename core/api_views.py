@@ -65,7 +65,8 @@ from .input_serializer import(
     ConfirmInputSerializer,
     ValidateOTPInputSerializer,
     ResendOTPInputSerializser,
-    ResendCodeInputSerializer
+    ResendCodeInputSerializer,
+    ResetInputSerializer
 )
 
 from Ecom import settings
@@ -477,7 +478,63 @@ class AuthViewset(YkGenericViewSet, UpdateModelMixin):
             logout(self.request)
             return GoodResponse({})
         except Exception as e:
-            return BadRequestResponse(str(e), "Unknown", request=self.request)        
+            return BadRequestResponse(str(e), "Unknown", request=self.request)   
+        
+    @swagger_auto_schema(
+        operation_summary="Reset init",
+        operation_description="Init the reset password",
+        responses={
+            200: EmptySerializer(),
+            400: BadRequestResponseSerializer(),
+            404: NotFoundResponseSerializer(),
+        },
+        request_body=ResetInputSerializer(),
+    )
+    @action(methods=["POST"], detail=False, url_path="reset/init")
+    
+    def reset_init(self, request, *args, **kwargs):
+        try:
+            rcv_ser = ResetInputSerializer(data=self.request.data)
+            if rcv_ser.is_valid():
+                email = rcv_ser.validated_data.get("email")
+                user = User.objects.filter(email=email).first()
+                
+                if user:
+                    code = "12345"
+                    TempCode.objects.create(
+                        code=code, user=user, type="reset"
+                    )
+                    
+                    email_encoded = base.url_safe_encode(user.email)
+                    code_encoded = base.url_safe_encode(code)
+                    
+                    fe_url = settings.FRONTEND_URL
+                    confirm_url = (
+                        fe_url
+                        + f"/reset?token={code_encoded}&email={email_encoded}"
+                    )
+                    
+                    messge = {
+                        "subject": _("confirm you email"),
+                        "email": user.email,
+                        "reset_url": confirm_url,
+                        "user": user.username,
+                    }
+                    
+                    # TODO Create Apache Kafka Notification
+                    return GoodResponse({
+                        "successful"
+                    })
+            else:
+                return BadRequestResponse(
+                    "Unable to init the password reset",
+                    "init_reset_error",
+                    request=self.request
+                )
+                
+        except Exception as e:
+            return BadRequestResponse(str(e), "Unkonwn", request=self.request)        
+             
         
 class ProductViewset(
     YkGenericViewSet,
