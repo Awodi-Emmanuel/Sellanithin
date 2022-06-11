@@ -53,16 +53,16 @@ class UserSerializer(ModelSerializer):
             "email_is_verified"
         )
         
-        def get_tokens(self, instance: User) -> Union[dict, None]:
-            refresh = RefreshToken.for_user(instance)
+    def get_tokens(self, instance: User) -> Union[dict, None]:
+        refresh = RefreshToken.for_user(instance)
         
             # print('refresh: ' + str(refresh))
             # print('access_token: ' + str(refresh.access_token))
             
-            return {
-                "refresh": str(refresh),
-                "access": str(refresh.access_token),
-            }                 
+        return {
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+        }                 
 
 class CategorySerializer(ModelSerializer):
     id = IntegerField()
