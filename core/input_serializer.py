@@ -82,7 +82,7 @@ class SignupInputSerializer(Serializer):
 class SigninInputSerializer(Serializer):
     email = EmailField(required=False, allow_null=True)
     username = CharField(required=False, allow_null=True)
-    password = CharField
+    password = CharField()
     
     class Meta:
         ref_name = None

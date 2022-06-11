@@ -176,7 +176,7 @@ class AuthViewset(YkGenericViewSet, UpdateModelMixin):
                     .first()
                 )
                 if tmp_code:
-                    tmp_code.user.email_is_verified = False
+                    tmp_code.user.email_is_verified = True
                     tmp_code.user.save()
                     tmp_code.is_used = True
                     tmp_code.save()
@@ -338,47 +338,68 @@ class AuthViewset(YkGenericViewSet, UpdateModelMixin):
     )
     @action(methods=["POST"], detail=False,)
     
+    
     def resend(self, request, *args, **kwargs):
         try:
-            rcv_ser =  ResendCodeInputSerializer(data=self.request.data)
+            rcv_ser = ResendCodeInputSerializer(data=self.request.data)
             if rcv_ser.is_valid():
                 user = self.request.user
-                print(user)
                 if user.email_is_verified:
                     return BadRequestResponse(
                         "User is already activated",
                         "user_is_active",
-                        data=rcv_ser.error,
-                        request=self.request
+                        data=rcv_ser.errors,
+                        request=self.request,
                     )
                 tmp_codes = TempCode.objects.filter(
                     user__email=rcv_ser.validated_data["email"],
                     is_used = False,
-                    expires__gte=timezone.now(),
+                    expires__gte = timezone.now(),
                 ).select_related()
-                
+                    
                 code = "54672" 
                 fe_url = settings.FRONTEND_URL
                 TempCode.objects.filter(
                     code=code, user=user, type="resend_confirmation"
                 )
                 
-                Confirm_url= (
+                confirm_url = (
                     fe_url
-                    + f"/confirm?code={base._url_safe_encode(code)}$firstname={base.url_safe_encode(user.first_name)}&last_name={base.url_safe_encode(user.last_name)}&email={base.url_safe_encode(user.email)}"
+                    + f"/confirm?code={base.url_safe_encode(code)}&firstname={base.url_safe_encode(user.first_name)}&lastname={base.url_safe_encode(user.last_name)}&email={base.url_safe_encode(user.email)}"
                 )
+                print(confirm_url)
+                    
+                message = {
+                    "subject": _("Confirm Your Email"),
+                    "email": self.request.user.email,
+                    "confirm_url": confirm_url,
+                    "username": self.request.user.username
+                }
+                    
+                # TODO Create Apache Kafka Notification
                 
-                
+                tmp_codes.update(is_used=True)
+                    
+                try:
+                    tmp_codes.save()
+                except:
+                    pass
+                    
+                return GoodResponse({
+                    "Confirmation email sent",
+                        
+                })                        
+            
             else:
                 return BadRequestResponse(
-                    "Invalid resend otp",
-                    "resend_error",
+                    "Invalid data sent",
+                    "invalid_data",
                     data=rcv_ser.errors,
-                    request=self.request
-                    ) 
+                    request=self.request,
+                )
             
         except Exception as e:
-            return BadRequestResponse(str(e), "Unkown", request=self.request) 
+            return BadRequestResponse(str(e), "Unknown", request=self.request) 
         
     @swagger_auto_schema(
         operation_summary="signin",
@@ -391,17 +412,55 @@ class AuthViewset(YkGenericViewSet, UpdateModelMixin):
         request_body=SigninInputSerializer(),
     )
     
-    @action(methods=["POST"], detail=False,)
+    @action(methods=["POST"], detail=False, permission_classes=[permissions.IsAuthenticated])
     
-    def signin(self, request, *args, **kwargs):
+    def signin(self, request, *args, **Kwargs):
         try:
             rcv_ser = SigninInputSerializer(data=self.request.data)
             if rcv_ser.is_valid():
-                print(rcv_ser)
+                email = rcv_ser.validated_data.get("email")
+                username = rcv_ser.validated_data.get("username")
+                password = rcv_ser.validated_data["password"]
+                user = User.objects.filter(
+                    Q(email=email) | Q(username=username)
+                ).first() 
+                if user:
+                    print(user)
+                    if user.is_active:
+                        if user.check_password(password):
+                            cookie = UserSerializer().get_tokens(user)
+                            print(cookie)
+                            return GoodResponse(
+                                UserSerializer(user).data, cookie=cookie
+                            )
+                        else:
+                            return BadRequestResponse(
+                                "Invalid email/password credentials",
+                                "invalid_credentials",
+                                request=self.request,
+                            )
+                    else:
+                        return BadRequestResponse(
+                            "User is not active", "user_inactive", request=self.request,
+                        )
+                            
+                else:
+                    return BadRequestResponse(
+                        "Invalid email/password credentials",
+                        "invalid_credentials",
+                        request=self.request,
+                    )
+            else: 
+                return BadRequestResponse(
+                    "Unable to signin",
+                    "signin_error",
+                    data=rcv_ser.errors,
+                    request=self.request,
+                )
         except Exception as e:
-            return BadRequestResponse(str(e), "Unknown", request=self.request)                  
-                    
-
+            traceback.print_exc()
+            return BadRequestResponse(str(e), "Unknown", request=self.request)
+        
 class ProductViewset(
     YkGenericViewSet,
     ListModelMixin,
