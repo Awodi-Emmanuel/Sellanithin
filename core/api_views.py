@@ -570,7 +570,7 @@ class AuthViewset(YkGenericViewSet, UpdateModelMixin):
                 )
                 
                 if tmp_codes:
-                    tmp_codes.user.is_active = True
+                    tmp_codes.user.is_active = False
                     tmp_codes.user.save()
                     user_ser = UserSerializer(tmp_codes.user)
                     return GoodResponse(user_ser.data)
