@@ -1,5 +1,6 @@
 
 from datetime import datetime, timedelta
+import email
 from typing import Union
 from uuid import uuid4
 
@@ -130,3 +131,13 @@ class ResetInputSerializer(Serializer):
     
     class Meta:
         ref_name = None       
+        
+        
+class ResetWithPasswordSerializer(Serializer):
+    email = EmailField()
+    code = CharField()
+    password = CharField
+    
+    
+    class Meta:
+        ref_name = None        

@@ -67,7 +67,8 @@ from .input_serializer import(
     ValidateOTPInputSerializer,
     ResendOTPInputSerializser,
     ResendCodeInputSerializer,
-    ResetInputSerializer
+    ResetInputSerializer,
+    ResetWithPasswordSerializer
 )
 
 from Ecom import settings
@@ -586,7 +587,35 @@ class AuthViewset(YkGenericViewSet, UpdateModelMixin):
                 )
                         
         except Exception as e:
-            return BadRequestResponse(str(e), "Unknown", request=self.request)             
+            return BadRequestResponse(str(e), "Unknown", request=self.request)
+         
+        
+    @swagger_auto_schema(
+        operation_summary="Reset",
+        operation_description="Reset your password",
+        responses={
+            200: EmptySerializer(),
+            400: BadRequestResponseSerializer(),
+            404: NotFoundResponseSerializer(),
+        },
+        request_body=ResetWithPasswordSerializer(),
+    )
+    
+    @action(methods=["POST"], detail=False, url_path="reset/complete")
+    
+    def reset_password_complete(self, request, *args, **kwargs):
+        try:
+            rcv_ser = ResetWithPasswordSerializer(data=self.request.data)
+            if rcv_ser.is_valid():
+                print(rcv_ser)
+            else:
+                return BadRequestResponse(
+                    "Unable to reset",
+                    "invalid_data",
+                    request=self.request
+                ) 
+        except Exception as e:
+            return BadRequestResponse(str(e), "Unknown", request=self.request)                         
         
 class ProductViewset(
     YkGenericViewSet,
