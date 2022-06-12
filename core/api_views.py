@@ -68,7 +68,8 @@ from .input_serializer import(
     ResendOTPInputSerializser,
     ResendCodeInputSerializer,
     ResetInputSerializer,
-    ResetWithPasswordSerializer
+    ResetWithPasswordSerializer,
+    ChangePasswordSerializer
 )
 
 from Ecom import settings
@@ -607,7 +608,41 @@ class AuthViewset(YkGenericViewSet, UpdateModelMixin):
         try:
             rcv_ser = ResetWithPasswordSerializer(data=self.request.data)
             if rcv_ser.is_valid():
-                print(rcv_ser)
+                code = base.url_safe_decode(rcv_ser.validated_data["code"])
+                email = base.url_safe_decode(rcv_ser.validated_data["email"])
+                tmp_code = (
+                    TempCode.objects.filter(
+                        code=code,
+                        user__email=email,
+                        is_used=False,
+                        expires__gte=timezone.now()
+                    )
+                    .select_related()
+                    .first()
+                )
+                if tmp_code:
+                    tmp_code.user.is_active=True
+                    tmp_code.user.set_password(rcv_ser.validated_data["email"])
+                    tmp_code.user.save()
+                    tmp_code.is_used=True
+                    tmp_code.save()
+                    
+                    tpl = "reset"
+                    message = {
+                        "subject": _("Password reset confirmation"),
+                        "tpl": tpl
+                    }
+                    
+                    # TODO Create Apache Kafka Notification
+                    
+                    user_ser = UserSerializer(tmp_code.user)
+                    return GoodResponse(user_ser.data)
+                else:
+                    return NotFoundResponse(
+                        "Token expired or invalid",
+                        "invalid_data",
+                        request=self.request,
+                    )
             else:
                 return BadRequestResponse(
                     "Unable to reset",
@@ -615,8 +650,38 @@ class AuthViewset(YkGenericViewSet, UpdateModelMixin):
                     request=self.request
                 ) 
         except Exception as e:
-            return BadRequestResponse(str(e), "Unknown", request=self.request)                         
+            return BadRequestResponse(str(e), "Unknown", request=self.request)
         
+    @swagger_auto_schema(
+        operation_summary="Change Password",
+        operation_description="Change User's password",
+        responses={
+            200: EmptySerializer(),
+            400: BadRequestResponseSerializer(),
+            404: NotFoundResponseSerializer(),
+        },
+        request_body=ChangePasswordSerializer(),
+    )
+    @action(methods=["POST"], detail=False, permission_classes=[permissions.IsAuthenticated], url_path="password/change")  
+    def password_change(self, request, *args, **kwargs):
+        try:
+            rcv_ser = ChangePasswordSerializer(data=self.request.data)
+        
+            if rcv_ser.is_valid():
+                print("Hello")
+                old_passord = rcv_ser.validated_data["old_password"]
+                new_password = rcv_ser.validate_data["new_password"]
+                confirm_password = rcv_ser.validate["confirm_password"],
+                
+                
+            else:
+                return BadRequestResponse(
+                    "Unable to reset",
+                    "reset_error",
+                    request=self.request
+                )                           
+        except Exception as e:
+            return BadRequestResponse(str(e), "Unknown", request=self.request)
 class ProductViewset(
     YkGenericViewSet,
     ListModelMixin,
