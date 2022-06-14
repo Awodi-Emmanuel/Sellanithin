@@ -1,6 +1,8 @@
 from email import message
+from itertools import product
 import logging
 from queue import Empty
+import re
 from select import select
 # from math import perm
 import traceback
@@ -59,6 +61,8 @@ from .responses import(
     BadRequestResponse,
     NotFoundResponse  
 )
+from core.errors import BadRequestError, NotFoundError
+
 
 from .input_serializer import(
     SigninInputSerializer,
@@ -80,12 +84,18 @@ logger = logging.getLogger()
 User = get_user_model()
 
 
-class AuthViewset(YkGenericViewSet, UpdateModelMixin):
-    # def get_queryset(self):
-    #     user = User.objects.all()
-    #     return user
+class AuthViewset(
+    YkGenericViewSet, 
+    ListModelMixin,
+    UpdateModelMixin,
+    DestroyModelMixin,
+    CreateModelMixin,
+    RetrieveModelMixin,):
+    def get_queryset(self):
+        user = User.objects.all()
+        return user
     
-    # serializer_class = UserSerializer()
+    serializer_class = UserSerializer()
     
     @swagger_auto_schema(
         operation_summary="Signup",
@@ -654,34 +664,62 @@ class AuthViewset(YkGenericViewSet, UpdateModelMixin):
         
     @swagger_auto_schema(
         operation_summary="Change Password",
-        operation_description="Change User's password",
+        operation_description="Change user's password",
         responses={
-            200: EmptySerializer(),
+            200: UserSerializer(),
             400: BadRequestResponseSerializer(),
             404: NotFoundResponseSerializer(),
         },
         request_body=ChangePasswordSerializer(),
     )
-    @action(methods=["POST"], detail=False, permission_classes=[permissions.IsAuthenticated], url_path="password/change")  
-    def password_change(self, request, *args, **kwargs):
+    @action(methods=["POST"], detail=False, permission_classes=[permissions.IsAuthenticated], url_path="password/change",)
+    
+    def Change_password(self, request, *args, **kwargs):
         try:
             rcv_ser = ChangePasswordSerializer(data=self.request.data)
-        
+            
             if rcv_ser.is_valid():
-                print("Hello")
-                old_passord = rcv_ser.validated_data["old_password"]
-                new_password = rcv_ser.validate_data["new_password"]
-                confirm_password = rcv_ser.validate["confirm_password"],
+                old_password = rcv_ser.validated_data["old_password"]
+                new_password = rcv_ser.validated_data["new_password"]
+                confirmed_password = rcv_ser.validated_data["confirmed_password"]
                 
-                
+                if self.request.user.check_password(old_password):
+                    if new_password == confirmed_password:
+                        self.request.user.set_password(new_password)
+                        self.request.user.save()
+                        
+                        message = {
+                            "subject": _("Your Password was Changed"),
+                            "email": self.request.user.email,
+                            "username": self.request.user.username
+                        }
+                        
+                        # TODO Create Apache Kafka Notification
+                        
+                        return GoodResponse(UserSerializer(self.request.user).data)
+                    else:
+                        return BadRequestError(
+                            "New passwords are differents",
+                            "new_password_different",
+                            self.request,
+                        ) 
+                else:
+                    return BadRequestError(
+                        "The old password is invalid",
+                        "old_invalid_password",
+                        self.request,
+                    ) 
             else:
                 return BadRequestResponse(
                     "Unable to reset",
                     "reset_error",
-                    request=self.request
-                )                           
+                    data=rcv_ser.errors,
+                    request=self.request,
+                )                              
         except Exception as e:
-            return BadRequestResponse(str(e), "Unknown", request=self.request)
+            return BadRequestResponse(str(e), "Uknown", request=self.request)  
+        
+               
 class ProductViewset(
     YkGenericViewSet,
     ListModelMixin,
@@ -689,6 +727,7 @@ class ProductViewset(
     DestroyModelMixin,
     CreateModelMixin,
     RetrieveModelMixin,
+  
 ):
     queryset = Product.objects.all()
     
@@ -724,6 +763,46 @@ class ProductViewset(
         
     #     return self.destroy(request, *args, **kwargs)
     
+    @swagger_auto_schema(
+        operation_summary="post Product",
+        operation_description="Post your product",
+        responses={
+            200: EmptySerializer(),
+            400: BadRequestResponseSerializer()
+        },
+        request_body=ProductSerializer(),
+    )
+    @action(methods=["POST"], detail=False,permission_classes=[permissions.IsAuthenticated],)
+    def create_product(self, request, *args, **kwargs):
+        try:
+            rcv_ser = ProductSerializer(data=self.request.data)
+            print(rcv_ser)
+        except Exception as e:
+            return BadRequestResponse(str(e), "Unknown", request=self.request)
+   
+   
+    @swagger_auto_schema(
+        operation_summary="Fetch Products",
+        operation_description="Fetch All Products",
+        responses={
+            200: EmptySerializer(),
+            400: BadRequestResponseSerializer(),
+        },
+        # request_body=ProductSerializer()
+    )
+    @action(permission_classes=[permissions.IsAuthenticated], detail=False,)
+    def get(self, request, *args, **kwargs):
+        rcv_ser = ProductSerializer(data=self.request.data)
+        if rcv_ser:
+            queryset = Product.objects.all().order_by('category_id')
+            serializer_class = ProductSerializer
+            prods_ser = serializer_class
+            return GoodResponse(UserSerializer(prods_ser).data)
+        else: NotFoundResponse(
+            "Products not found",
+            "products_error",
+            request=self.request
+            )
     
 class CategoryViewset(
     YkGenericViewSet,
