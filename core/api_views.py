@@ -1,12 +1,10 @@
 from email import message
 from itertools import product
 import logging
-from queue import Empty
 import re
 from select import select
 # from math import perm
 import traceback
-from unicodedata import category
 from pytz import timezone
 
 from requests import request
@@ -44,7 +42,7 @@ from core.model_serializer import(
     UserSerializer,
     CartSerailizer
 )
-from core.models import TempCode
+from core.models import TempCode, Category
 
 from rest_framework.decorators import action
 from django.db.models import Q
