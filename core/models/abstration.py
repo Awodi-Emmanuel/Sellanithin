@@ -67,7 +67,7 @@ class Product(models.Model):
     price: models.DecimalField = models.DecimalField(max_digits=50, decimal_places=2) 
     stock: models.IntegerField = models.IntegerField()
     available: models.BooleanField = models.BooleanField(default=True)
-    date_added: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+    created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
     updated: models.DateTimeField = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -87,7 +87,7 @@ class Product(models.Model):
         
 class Cart(models.Model):
     user: models.ForeignKey = models.ForeignKey(Users, on_delete=models.SET_NULL, null=True, blank=True)
-    product: models.ForeignKey = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
+    item: models.ForeignKey = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
     quantity: models.IntegerField = models.IntegerField(null=False)
     created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
     updated_at: models.DateField = models.DateTimeField(auto_now=True)
