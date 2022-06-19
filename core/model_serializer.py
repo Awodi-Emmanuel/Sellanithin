@@ -92,7 +92,7 @@ class ProductSerializer(ModelSerializer):
             "price",
             "stock",
             "available",
-            "date_added",
+            "created_at",
             "updated"
         )
         
@@ -105,7 +105,7 @@ class CartSerailizer(ModelSerializer):
         fields = (
             "id",
             "user",
-            "product",
+            "item",
             "quantity",
             "created_at",
             "updated_at"

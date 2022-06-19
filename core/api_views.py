@@ -1,9 +1,6 @@
 from email import message
-from itertools import product
 import logging
-import re
-from select import select
-# from math import perm
+
 import traceback
 from pytz import timezone
 
@@ -77,6 +74,7 @@ from .input_serializer import(
     ChangePasswordSerializer
 )
 
+from .cart_helper import CartHelper, DeliveryCostHelper
 from Ecom import settings
 from utils import base, crypt
 
@@ -877,7 +875,10 @@ class CustomerCategoryViewset(
         serializer_class = CategorySerializer
         
         
-class  CartViewset(YkGenericViewSet):
+class  CartViewset(
+    YkGenericViewSet,
+    CreateModelMixin,
+    RetrieveModelMixin,):
     queryset = Cart.objects.all().order_by('id')
     serializer_class = CartSerailizer
     
@@ -889,13 +890,16 @@ class  CartViewset(YkGenericViewSet):
             400: BadRequestResponseSerializer(),
         },
     )
-    @action(methods=["POST"], detail= False, url_path="cart")
-    def add_to_card(self, request, *args, **kwargs):
+    @action(methods=["get"], detail= False, url_path='checkout/(?P<userId>[^/.]+)', url_name='checkout')
+    def checkout(self, request, *args, **kwargs):
         try:
-            rcv_ser = CartSerailizer(data=self.request.data)
+            user = User.objects.get(pk=int(kwargs.get('userId')))
             
         except Exception as e:
             return BadRequestResponse(str(e), "Unknown", request=self.request)
-            
+       
+        cart_helper = CartHelper(user)
+        checkout_details = cart_helper.prepare_cart_for_checkout()
+        print(checkout_details)            
     
     

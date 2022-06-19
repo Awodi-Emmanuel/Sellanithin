@@ -60,6 +60,7 @@ class CartHelper:
         
     def prepare_cart_for_checkout(self):
         self.cart_items = Cart.objects.filter(user=self.user)
+        print(self.cart_items)
         
         if not self.cart_items:
             return False
