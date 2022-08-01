@@ -7,7 +7,7 @@ from kafka import kafkaProducer
 BOOTSTRAP_SERVER=['localhost:9092']
 
 class BaseProducer:
-    class ActionTyp(enum.Enum):
+    class ActionType(enum.Enum):
         notification = "notification"
         default = "notification"
         
