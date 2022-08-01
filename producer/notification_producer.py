@@ -14,7 +14,8 @@ class NotificationType(enum.Enum):
     signup = "signup",
     reset_init = "reset_init"
     reset = "reset"
-    invite = "confirm"
+    invite = "invite"
+    confirm = "confirm"
     change_password = "change_password"
     
     

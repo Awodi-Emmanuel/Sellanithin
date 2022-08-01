@@ -78,6 +78,12 @@ from .cart_helper import CartHelper, DeliveryCostHelper
 from Ecom import settings
 from utils import base, crypt
 
+from producer.notification_producer import (
+    ChannelType,
+    NotificationProducer,
+    NotificationType
+)
+
 logger = logging.getLogger()
 
 User = get_user_model()
@@ -124,7 +130,7 @@ class AuthViewset(
                         "confirm_url": confirm_url,
                         "username": user.username,
                     }
-                    """
+                   
                     NotificationProducer(
                         req_id="halkjhdflkjfdlkjhg",
                         stream_id="hkajdfhjgkhgjhk",
@@ -132,14 +138,14 @@ class AuthViewset(
                         notification_type=NotificationType.signup.value,
                         message=message,
                     ).send_notification_event()
-                    """
+                   
                     message = {
                         "subject": _("Confirm Your Email"),
                         "phone": user.phone_number,
                         "code": code_otp,
                         "username": user.username,
                     }
-                    """
+                    
                     NotificationProducer(
                         req_id="halkjhdflkjfdlkjhg",
                         stream_id="hkajdfhjgkhgjhk",
@@ -147,7 +153,7 @@ class AuthViewset(
                         notification_type=NotificationType.signup.value,
                         message=message,
                     ).send_notification_event()
-                    """
+                    
                     return CreatedResponse({"message": "user created"})
                 
                 return GoodResponse()
@@ -202,7 +208,13 @@ class AuthViewset(
                         "username": tmp_code.user.username
                     }
                     
-                    # TODO Apache Kafka
+                    NotificationProducer(
+                        req_id = "halkjhdflkjfdlkjhg",
+                        stream_id ="hkajdfhjgkhgjhk",
+                        channel=[ChannelType.mail.value],
+                        notification_type=NotificationType.confirm.value,
+                        message=message
+                    ).send_notification_event()
                     
                     return GoodResponse(user_ser.data)
                 else:
