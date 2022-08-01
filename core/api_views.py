@@ -1,5 +1,6 @@
 from email import message
 import logging
+from multiprocessing.sharedctypes import Value
 
 import traceback
 from pytz import timezone
@@ -331,9 +332,17 @@ class AuthViewset(
                         "username": user.username
                     }
                     
-                    # TODO Create Apache Kafka Notification
+                    NotificationProducer(
+                        req_id= "halkjhdflkjfdlkjhg",
+                        stream_id = "hkajdfhjgkhgjhk",
+                        channel = [ChannelType.sms.value],
+                        notification_type= NotificationType.signup.Value,
+                        message=message
+                    ).send_notification_event()
                     
-                    return GoodResponse({"Confirmation email sent"})
+                    return GoodResponse({
+                        "OTP sent"
+                    })
                 else:
                     return NotFoundResponse(
                         "User is active or User not found",
@@ -401,7 +410,14 @@ class AuthViewset(
                     "username": self.request.user.username
                 }
                     
-                # TODO Create Apache Kafka Notification
+                
+                NotificationProducer(
+                    req_id="halkjhdflkjfdlkjhg",
+                    stream_id="hkajdfhjgkhgjhk",
+                    channel=[ChannelType.mail.value],
+                    notification_type=NotificationType.signup.value,
+                    message=message
+                ).send_notification_event()
                 
                 tmp_codes.update(is_used=True)
                     
@@ -545,7 +561,14 @@ class AuthViewset(
                         "user": user.username,
                     }
                     
-                    # TODO Create Apache Kafka Notification
+                    NotificationProducer(
+                        req_id="halkjhdflkjfdlkjhg",
+                        stream_id= "hkajdfhjgkhgjhk",
+                        channel=[ChannelType.mail.value],
+                        notification_type=NotificationType.reset_init.Value,
+                        message=message
+                    ).send_notification_event()
+                    
                     return GoodResponse({
                         "successful"
                     })
@@ -654,7 +677,14 @@ class AuthViewset(
                         "tpl": tpl
                     }
                     
-                    # TODO Create Apache Kafka Notification
+                    
+                    NotificationProducer(
+                        req_id="halkjhdflkjfdlkjhg",
+                        stream_id= "hkajdfhjgkhgjhk",
+                        channel= [ChannelType.mail.value, ChannelType.sms.value],
+                        notification_type=NotificationType.reset.value,
+                        message=message
+                    ).send_notification_event()
                     
                     user_ser = UserSerializer(tmp_code.user)
                     return GoodResponse(user_ser.data)
@@ -705,7 +735,13 @@ class AuthViewset(
                             "username": self.request.user.username
                         }
                         
-                        # TODO Create Apache Kafka Notification
+                        NotificationProducer(
+                            req_id="halkjhdflkjfdlkjhg",
+                            stream_id="hkajdfhjgkhgjhk",
+                            channel=[ChannelType.mail.vallue],
+                            notification_type=NotificationProducer.change_password.value,
+                            message=message
+                        ).send_notification_event()
                         
                         return GoodResponse(UserSerializer(self.request.user).data)
                     else:
