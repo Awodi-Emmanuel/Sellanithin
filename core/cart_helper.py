@@ -135,3 +135,8 @@ class CartHelper:
         self.checkout_details['amount'].append({'total_amount': self.cart_final_total_amount,
                                                 'delivery_cost': self.delivery_cost})        
                 
+                
+                
+                
+                
+                

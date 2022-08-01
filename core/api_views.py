@@ -870,15 +870,16 @@ class CustomerCategoryViewset(
     ListModelMixin,
     RetrieveModelMixin,
 ):
-    def get_queryset(self):
-        category = Category.objects.all()
-        serializer_class = CategorySerializer
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+        
         
         
 class  CartViewset(
     YkGenericViewSet,
     CreateModelMixin,
-    RetrieveModelMixin,):
+    RetrieveModelMixin,
+    UpdateModelMixin,):
     queryset = Cart.objects.all().order_by('id')
     serializer_class = CartSerailizer
     
@@ -893,13 +894,12 @@ class  CartViewset(
     @action(methods=["get"], detail= False, url_path='checkout/(?P<userId>[^/.]+)', url_name='checkout')
     def checkout(self, request, *args, **kwargs):
         try:
-            user = User.objects.get(pk=int(kwargs.get('userId')))
-            
+            user = User.objects.get(pk=int(kwargs.get('userId'))) 
+            cart_helper = CartHelper(user)
+            checkout_details = cart_helper.prepare_cart_for_checkout()
+            print(checkout_details)            
+    
         except Exception as e:
             return BadRequestResponse(str(e), "Unknown", request=self.request)
        
-        cart_helper = CartHelper(user)
-        checkout_details = cart_helper.prepare_cart_for_checkout()
-        print(checkout_details)            
-    
-    
+        
