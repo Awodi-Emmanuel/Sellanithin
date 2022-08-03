@@ -93,7 +93,7 @@ class ProductSerializer(ModelSerializer):
             "stock",
             "available",
             "created_at",
-            "updated"
+            "updated_at"
         )
         
         

@@ -1,5 +1,6 @@
 from email import message
 import logging
+from multiprocessing.sharedctypes import Value
 
 import traceback
 from pytz import timezone
@@ -78,6 +79,12 @@ from .cart_helper import CartHelper, DeliveryCostHelper
 from Ecom import settings
 from utils import base, crypt
 
+from producer.notification_producer import (
+    ChannelType,
+    NotificationProducer,
+    NotificationType
+)
+
 logger = logging.getLogger()
 
 User = get_user_model()
@@ -124,7 +131,7 @@ class AuthViewset(
                         "confirm_url": confirm_url,
                         "username": user.username,
                     }
-                    """
+                   
                     NotificationProducer(
                         req_id="halkjhdflkjfdlkjhg",
                         stream_id="hkajdfhjgkhgjhk",
@@ -132,14 +139,14 @@ class AuthViewset(
                         notification_type=NotificationType.signup.value,
                         message=message,
                     ).send_notification_event()
-                    """
+                   
                     message = {
                         "subject": _("Confirm Your Email"),
                         "phone": user.phone_number,
                         "code": code_otp,
                         "username": user.username,
                     }
-                    """
+                    
                     NotificationProducer(
                         req_id="halkjhdflkjfdlkjhg",
                         stream_id="hkajdfhjgkhgjhk",
@@ -147,7 +154,7 @@ class AuthViewset(
                         notification_type=NotificationType.signup.value,
                         message=message,
                     ).send_notification_event()
-                    """
+                    
                     return CreatedResponse({"message": "user created"})
                 
                 return GoodResponse()
@@ -202,7 +209,13 @@ class AuthViewset(
                         "username": tmp_code.user.username
                     }
                     
-                    # TODO Apache Kafka
+                    NotificationProducer(
+                        req_id = "halkjhdflkjfdlkjhg",
+                        stream_id ="hkajdfhjgkhgjhk",
+                        channel=[ChannelType.mail.value],
+                        notification_type=NotificationType.confirm.value,
+                        message=message
+                    ).send_notification_event()
                     
                     return GoodResponse(user_ser.data)
                 else:
@@ -319,9 +332,17 @@ class AuthViewset(
                         "username": user.username
                     }
                     
-                    # TODO Create Apache Kafka Notification
+                    NotificationProducer(
+                        req_id= "halkjhdflkjfdlkjhg",
+                        stream_id = "hkajdfhjgkhgjhk",
+                        channel = [ChannelType.sms.value],
+                        notification_type= NotificationType.signup.Value,
+                        message=message
+                    ).send_notification_event()
                     
-                    return GoodResponse({"Confirmation email sent"})
+                    return GoodResponse({
+                        "OTP sent"
+                    })
                 else:
                     return NotFoundResponse(
                         "User is active or User not found",
@@ -389,7 +410,14 @@ class AuthViewset(
                     "username": self.request.user.username
                 }
                     
-                # TODO Create Apache Kafka Notification
+                
+                NotificationProducer(
+                    req_id="halkjhdflkjfdlkjhg",
+                    stream_id="hkajdfhjgkhgjhk",
+                    channel=[ChannelType.mail.value],
+                    notification_type=NotificationType.signup.value,
+                    message=message
+                ).send_notification_event()
                 
                 tmp_codes.update(is_used=True)
                     
@@ -533,7 +561,14 @@ class AuthViewset(
                         "user": user.username,
                     }
                     
-                    # TODO Create Apache Kafka Notification
+                    NotificationProducer(
+                        req_id="halkjhdflkjfdlkjhg",
+                        stream_id= "hkajdfhjgkhgjhk",
+                        channel=[ChannelType.mail.value],
+                        notification_type=NotificationType.reset_init.Value,
+                        message=message
+                    ).send_notification_event()
+                    
                     return GoodResponse({
                         "successful"
                     })
@@ -642,7 +677,14 @@ class AuthViewset(
                         "tpl": tpl
                     }
                     
-                    # TODO Create Apache Kafka Notification
+                    
+                    NotificationProducer(
+                        req_id="halkjhdflkjfdlkjhg",
+                        stream_id= "hkajdfhjgkhgjhk",
+                        channel= [ChannelType.mail.value, ChannelType.sms.value],
+                        notification_type=NotificationType.reset.value,
+                        message=message
+                    ).send_notification_event()
                     
                     user_ser = UserSerializer(tmp_code.user)
                     return GoodResponse(user_ser.data)
@@ -693,7 +735,13 @@ class AuthViewset(
                             "username": self.request.user.username
                         }
                         
-                        # TODO Create Apache Kafka Notification
+                        NotificationProducer(
+                            req_id="halkjhdflkjfdlkjhg",
+                            stream_id="hkajdfhjgkhgjhk",
+                            channel=[ChannelType.mail.vallue],
+                            notification_type=NotificationProducer.change_password.value,
+                            message=message
+                        ).send_notification_event()
                         
                         return GoodResponse(UserSerializer(self.request.user).data)
                     else:
@@ -870,15 +918,16 @@ class CustomerCategoryViewset(
     ListModelMixin,
     RetrieveModelMixin,
 ):
-    def get_queryset(self):
-        category = Category.objects.all()
-        serializer_class = CategorySerializer
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+        
         
         
 class  CartViewset(
     YkGenericViewSet,
     CreateModelMixin,
-    RetrieveModelMixin,):
+    RetrieveModelMixin,
+    UpdateModelMixin,):
     queryset = Cart.objects.all().order_by('id')
     serializer_class = CartSerailizer
     
@@ -893,13 +942,12 @@ class  CartViewset(
     @action(methods=["get"], detail= False, url_path='checkout/(?P<userId>[^/.]+)', url_name='checkout')
     def checkout(self, request, *args, **kwargs):
         try:
-            user = User.objects.get(pk=int(kwargs.get('userId')))
-            
+            user = User.objects.get(pk=int(kwargs.get('userId'))) 
+            cart_helper = CartHelper(user)
+            checkout_details = cart_helper.prepare_cart_for_checkout()
+            print(checkout_details)            
+    
         except Exception as e:
             return BadRequestResponse(str(e), "Unknown", request=self.request)
        
-        cart_helper = CartHelper(user)
-        checkout_details = cart_helper.prepare_cart_for_checkout()
-        print(checkout_details)            
-    
-    
+        
