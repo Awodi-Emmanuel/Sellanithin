@@ -6,7 +6,7 @@ import traceback
 from pytz import timezone
 
 from requests import request
-from core.models.abstration import DeliveryCost
+from core.models.abstration import Campaign, DeliveryCost
 
 from core.pagination import MetadataPagination, MetadataPaginatorInspector
 from django.utils.decorators import method_decorator
@@ -33,8 +33,10 @@ from rest_framework.mixins import (
 
 from django.contrib.auth import get_user_model
 
-from core.models.implementation import Category, Product, Cart, DeliveryCost
+from core.models.implementation import Category, Coupon, Campaign, Product, Cart, DeliveryCost
 from core.model_serializer import(
+    CampaignSerializer,
+    CouponSerializer,
     ProductSerializer,
     CategorySerializer,
     UserSerializer,
@@ -45,7 +47,9 @@ from core.models import TempCode, Category
 from rest_framework.decorators import action
 from django.db.models import Q
 from drf_yasg import openapi  # type: ignore
-from drf_yasg.utils import swagger_auto_schema  # type: ignore
+from drf_yasg.utils import swagger_auto_schema
+
+from utils.payment import process_payment  # type: ignore
 
 from .responses_serialisers import (
     EmptySerializer,
@@ -72,7 +76,8 @@ from .input_serializer import(
     ResendCodeInputSerializer,
     ResetInputSerializer,
     ResetWithPasswordSerializer,
-    ChangePasswordSerializer
+    ChangePasswordSerializer,
+    PaymentSerializer
 )
 
 from .cart_helper import CartHelper, DeliveryCostHelper
@@ -84,6 +89,8 @@ from producer.notification_producer import (
     NotificationProducer,
     NotificationType
 )
+
+from core.pagination import MetadataPagination, MetadataPaginatorInspector
 
 logger = logging.getLogger()
 
@@ -776,6 +783,7 @@ class AdminProductViewset(
 ):
     permission_classes=[permissions.IsAuthenticated]
     queryset = Product.objects.all()
+    pagination_class = MetadataPagination
     
     serializer_class = ProductSerializer
     
@@ -818,6 +826,7 @@ class CustomerProductViewset(
     queryset = Product.objects.all()
     
     serializer_class = ProductSerializer
+    pagination_class = MetadataPagination
     
     @swagger_auto_schema(
         operation_summary="Product",
@@ -852,7 +861,7 @@ class CustomerProductViewset(
         },
         # request_body=ProductSerializer()
     )
-    @action(permission_classes=[permissions.IsAuthenticated], detail=False,)
+    @action(methods=["GET"], permission_classes=[permissions.IsAuthenticated], pagination_class=MetadataPagination, detail=False,)
     def get(self, request, *args, **kwargs):
         try:
             rcv_ser = ProductSerializer(data=self.request.data)
@@ -878,9 +887,7 @@ class AdminCategoryViewset(
     RetrieveModelMixin,
 ):
     queryset = Category.objects.all()
-    
     serializer_class = CategorySerializer
-    
     permission_classes=[permissions.IsAuthenticated]
     
     """Create a category function"""
@@ -939,7 +946,7 @@ class  CartViewset(
             400: BadRequestResponseSerializer(),
         },
     )
-    @action(methods=["get"], detail= False, url_path='checkout/(?P<userId>[^/.]+)', url_name='checkout')
+    @action(methods=["GET"], detail= False, url_path='checkout/(?P<userId>[^/.]+)', url_name='checkout')
     def checkout(self, request, *args, **kwargs):
         try:
             user = User.objects.get(pk=int(kwargs.get('userId'))) 
@@ -949,5 +956,50 @@ class  CartViewset(
     
         except Exception as e:
             return BadRequestResponse(str(e), "Unknown", request=self.request)
-       
         
+class CampaignViewset(
+    YkGenericViewSet,
+    CreateModelMixin,
+    RetrieveModelMixin,
+    UpdateModelMixin,
+):
+    queryset = Campaign.objects.all().order_by('id')
+    serializer_class = CampaignSerializer     
+   
+   
+         
+class CouponViewset(
+    YkGenericViewSet,
+    CreateModelMixin,
+    RetrieveModelMixin,
+    UpdateModelMixin,
+):
+    queryset = Coupon.objects.all().order_by('id')
+    serializer_class = CouponSerializer
+
+   
+class PaymentViewset(YkGenericViewSet):
+    @swagger_auto_schema(
+        operation_summary="Make your payment",
+        operation_description="enter amout to make payment",
+        responses= {
+            200: EmptySerializer(),
+            400: BadRequestResponseSerializer(),
+        },
+        request_body=PaymentSerializer(),
+    )
+    @action(methods=["POST"], detail=False)
+    def payment(self, request, *args, **kwargs):
+        try:
+            rcv_ser = PaymentSerializer(data=self.request.data)
+            if rcv_ser.is_valid():
+                name = rcv_ser.validated_data['name']
+                email = rcv_ser.validated_data['email']
+                amount = rcv_ser.validated_data['amount']
+                phone = rcv_ser.validated_data['phone']
+                flutter_pro = process_payment(name, email, amount, phone)
+                if flutter_pro == rcv_ser:
+                    print(flutter_pro)
+                    return GoodResponse(flutter_pro)
+        except Exception as e:
+            return BadRequestResponse(str(e), "unkown", request=self.request)

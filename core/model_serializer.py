@@ -126,6 +126,7 @@ class  CampaignSerializer(ModelSerializer):
     class Meta:
         model = Campaign
         fields = (
+            "id",
             "discount_type",
             "discount_rate",
             "discount_amount",
@@ -139,10 +140,10 @@ class  CampaignSerializer(ModelSerializer):
         
         
 class CouponSerializer(ModelSerializer):
-    id = IntegerField()
+    # id = IntegerField()
     
     class Meta:
         model = Coupon
-        fields = ("minimum_cart_amount", "discount_rate", "created_at", "updated_at")             
+        fields = ("id", "minimum_cart_amount", "discount_rate", "created_at", "updated_at")             
         
         

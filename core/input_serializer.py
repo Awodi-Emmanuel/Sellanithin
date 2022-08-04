@@ -151,4 +151,11 @@ class ResetInputSerializer(Serializer):
     class Meta:
         ref_name = None       
         
-        
+class PaymentSerializer(Serializer):
+    name = CharField()
+    email = EmailField()
+    phone= CharField()
+    amount = FloatField()
+
+    class Meta:
+        ref_name = None
