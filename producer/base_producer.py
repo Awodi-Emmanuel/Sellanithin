@@ -2,7 +2,8 @@ from email.policy import default
 from ensurepip import bootstrap
 import enum 
 import json
-from kafka import kafkaProducer
+# from kafka import kafkaProducer
+from kafka import KafkaProducer
 
 BOOTSTRAP_SERVER=['localhost:9092']
 
@@ -24,7 +25,7 @@ class BaseProducer:
         }
         return event
     def send_event(self, event):
-        producer = kafkaProducer(
+        producer = KafkaProducer(
             value_serializer=lambda v: json.dump(v).encode("utf-8"),
             bootstrap_server=BOOTSTRAP_SERVER,
         )

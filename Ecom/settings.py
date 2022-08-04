@@ -30,6 +30,7 @@ ALLOWED_HOSTS = []
 
 AUTH_USER_MODEL = "core.User"
 
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -125,7 +126,8 @@ USE_TZ = True
 
 
 REST_FRAMEWORK = {
-    
+    "DEFAULT_PAGINATION_CLASS": "core.pagination.MetadataPagination",
+    "PAGE_SIZE": 100,
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     )
@@ -192,3 +194,6 @@ LOGGING = {
         },
     },
 }
+
+# Flutterwave Secret key
+SECRET_KEY2 = "FLWSECK_TEST-a99df019bb629910839ea0920cfa2d83-X"
