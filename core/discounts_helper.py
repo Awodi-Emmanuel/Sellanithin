@@ -1,5 +1,5 @@
 from unicodedata import category
-from .models import Campaign, Coupon
+from cart.models.implementation import Campaign, Coupon
 
 class CouponHelper:
     

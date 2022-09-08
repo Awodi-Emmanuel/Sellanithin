@@ -1,12 +1,12 @@
 from django.utils import timezone
 from .abstration import TempCode as AbstractTempCode 
 from .abstration import Users as AbstractUsers
-from .abstration import Category as AbstractCategory
-from .abstration import Product as AbstractProduct
-from .abstration import Cart as AbstractCart
-from .abstration import DeliveryCost as AbstractDeliveryCost
-from .abstration import Campaign as AbstractCampaign
-from .abstration import Coupon as AbstractCoupon
+# from .abstration import Category as AbstractCategory
+# from .abstration import Product as AbstractProduct
+# from .abstration import Cart as AbstractCart
+# from .abstration import DeliveryCost as AbstractDeliveryCost
+# from .abstration import Campaign as AbstractCampaign
+# from .abstration import Coupon as AbstractCoupon
 
 
 
@@ -35,6 +35,8 @@ class TempCode(AbstractTempCode):
 class Users(AbstractUsers):
     pass        
 
+'''
+
 class Category(AbstractCategory):
     pass
 
@@ -52,3 +54,5 @@ class Campaign(AbstractCampaign):
 
 class Coupon(AbstractCoupon):
     pass
+    
+'''

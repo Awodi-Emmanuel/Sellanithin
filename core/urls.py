@@ -5,30 +5,30 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from utils.payment import process_payment
 from core.api_views import(
     AuthViewset,
-    AdminProductViewset,
-    CustomerProductViewset, 
-    AdminCategoryViewset,
-    CustomerCategoryViewset,
-    CartViewset,
-    CampaignViewset,
-    CouponViewset,
-    PaymentViewset
+    # AdminProductViewset,
+    # CustomerProductViewset, 
+    # AdminCategoryViewset,
+    # CustomerCategoryViewset,
+    # CartViewset,
+    # CampaignViewset,
+    # CouponViewset,
+    # PaymentViewset
 ) 
 
 
 router = DefaultRouter()
 router.register("auth", AuthViewset, basename="auth")
-router.register("product", CustomerProductViewset, basename="product")
-router.register("admin/product", AdminProductViewset, basename="admin/product")
+# router.register("product", CustomerProductViewset, basename="product")
+# router.register("admin/product", AdminProductViewset, basename="admin/product")
 
-router.register("category", CustomerCategoryViewset, basename="category")
-router.register("admin/category", AdminCategoryViewset, basename="admin/category")
+# router.register("category", CustomerCategoryViewset, basename="category")
+# router.register("admin/category", AdminCategoryViewset, basename="admin/category")
 
-router.register("cart", CartViewset, basename="cart")
-router.register("discounts/campaign", CampaignViewset, basename="campaign")
-router.register("discounts/coupon", CouponViewset, basename="coupon")
+# router.register("cart", CartViewset, basename="cart")
+# router.register("discounts/campaign", CampaignViewset, basename="campaign")
+# router.register("discounts/coupon", CouponViewset, basename="coupon")
 
-router.register("payment", PaymentViewset, basename="payment")
+# router.register("payment", PaymentViewset, basename="payment")
 # router.register("callback", process_payment, basename="callback")
 
 

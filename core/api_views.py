@@ -6,7 +6,7 @@ import traceback
 from pytz import timezone
 
 from requests import request
-from core.models.abstration import Campaign, DeliveryCost
+# from core.models.abstration import Campaign, DeliveryCost
 
 from core.pagination import MetadataPagination, MetadataPaginatorInspector
 from django.utils.decorators import method_decorator
@@ -33,16 +33,16 @@ from rest_framework.mixins import (
 
 from django.contrib.auth import get_user_model
 
-from core.models.implementation import Category, Coupon, Campaign, Product, Cart, DeliveryCost
+# from core.models.implementation import Category, Coupon, Campaign, Product, Cart, DeliveryCost
 from core.model_serializer import(
-    CampaignSerializer,
-    CouponSerializer,
-    ProductSerializer,
-    CategorySerializer,
+    # CampaignSerializer,
+    # CouponSerializer,
+    # ProductSerializer,
+    # CategorySerializer,
     UserSerializer,
-    CartSerailizer
+    # CartSerailizer
 )
-from core.models import TempCode, Category
+from core.models import TempCode
 
 from rest_framework.decorators import action
 from django.db.models import Q
@@ -77,7 +77,7 @@ from .input_serializer import(
     ResetInputSerializer,
     ResetWithPasswordSerializer,
     ChangePasswordSerializer,
-    PaymentSerializer
+    # PaymentSerializer
 )
 
 from .cart_helper import CartHelper, DeliveryCostHelper
@@ -104,10 +104,10 @@ class AuthViewset(
     DestroyModelMixin,
     CreateModelMixin,
     RetrieveModelMixin,):
-    def get_queryset(self):
-        user = User.objects.all()
-        return user
-    
+    # def get_queryset(self):
+    #     user = User.objects.all()
+    #     return user
+    queryset = User.objects.all()
     serializer_class = UserSerializer()
     
     @swagger_auto_schema(
@@ -121,6 +121,7 @@ class AuthViewset(
         try:
             rcv_ser = SignupInputSerializer(data=self.request.data)
             if rcv_ser.is_valid():
+                print("Hello")
                 user = rcv_ser.create_user()
                 if not user.is_active:
                     code = "12345"  # TODO: Create and add code generation function
@@ -772,7 +773,8 @@ class AuthViewset(
                 )                              
         except Exception as e:
             return BadRequestResponse(str(e), "Uknown", request=self.request)  
-        
+
+'''
 class AdminProductViewset(
     YkGenericViewSet,
     ListModelMixin,
@@ -928,7 +930,7 @@ class CustomerCategoryViewset(
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
         
-        
+
         
 class  CartViewset(
     YkGenericViewSet,
@@ -977,29 +979,5 @@ class CouponViewset(
     queryset = Coupon.objects.all().order_by('id')
     serializer_class = CouponSerializer
 
-   
-class PaymentViewset(YkGenericViewSet):
-    @swagger_auto_schema(
-        operation_summary="Make your payment",
-        operation_description="enter amout to make payment",
-        responses= {
-            200: EmptySerializer(),
-            400: BadRequestResponseSerializer(),
-        },
-        request_body=PaymentSerializer(),
-    )
-    @action(methods=["POST"], detail=False)
-    def payment(self, request, *args, **kwargs):
-        try:
-            rcv_ser = PaymentSerializer(data=self.request.data)
-            if rcv_ser.is_valid():
-                name = rcv_ser.validated_data['name']
-                email = rcv_ser.validated_data['email']
-                amount = rcv_ser.validated_data['amount']
-                phone = rcv_ser.validated_data['phone']
-                flutter_pro = process_payment(name, email, amount, phone)
-                if flutter_pro == rcv_ser:
-                    print(flutter_pro)
-                    return GoodResponse(flutter_pro)
-        except Exception as e:
-            return BadRequestResponse(str(e), "unkown", request=self.request)
+  
+'''
