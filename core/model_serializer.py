@@ -8,14 +8,15 @@ from rest_framework.serializers import ModelSerializer as DrfModelSerializer
 from rest_framework.utils.serializer_helpers import ReturnList
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from core.models.implementation import(
-    Category,
-    Product,
-    Cart,
-    DeliveryCost,
-    Campaign,
-    Coupon,
-) 
+
+# from core.models.implementation import(
+#     Category,
+#     Product,
+#     Cart,
+#     DeliveryCost,
+#     Campaign,
+#     Coupon,
+# ) 
 
 User = get_user_model()
 
@@ -63,7 +64,7 @@ class UserSerializer(ModelSerializer):
             "refresh": str(refresh),
             "access": str(refresh.access_token),
         }                 
-
+'''
 class CategorySerializer(ModelSerializer):
     id = IntegerField()
     
@@ -146,4 +147,4 @@ class CouponSerializer(ModelSerializer):
         model = Coupon
         fields = ("id", "minimum_cart_amount", "discount_rate", "created_at", "updated_at")             
         
-        
+'''

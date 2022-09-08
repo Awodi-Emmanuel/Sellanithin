@@ -22,4 +22,11 @@ schema_view = get_schema_view(
 urlpatterns = [
    path("docs/", schema_view.with_ui("swagger", cache_timeout=0), name="docs-ui"),
    path("v1/", include(("core.urls", "core"))),
+   # path("v1/", include(("cart.urls", "cart")))
+   
+    path("v1/", include(("cart.urls", "cart"))),
+    path("v1/", include(("products.urls", "products"))),
+    path("v1/", include(("checkout.urls", "checkout"))),
+   #  path("v1/", include(("monitoring.urls", "monitoring"))),
+   
 ]

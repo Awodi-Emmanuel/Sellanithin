@@ -1,5 +1,5 @@
 from unicodedata import category
-from .models import Cart, DeliveryCost
+from cart.models.implementation import Cart, DeliveryCost
 from .discounts_helper import (
     CampaignHelper,
     CouponHelper

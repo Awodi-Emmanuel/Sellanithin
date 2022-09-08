@@ -1,6 +1,7 @@
 
 from datetime import datetime, timedelta
 import email
+from locale import currency
 from typing import Union
 from uuid import uuid4
 
@@ -151,11 +152,6 @@ class ResetInputSerializer(Serializer):
     class Meta:
         ref_name = None       
         
-class PaymentSerializer(Serializer):
-    name = CharField()
-    email = EmailField()
-    phone= CharField()
-    amount = FloatField()
 
-    class Meta:
-        ref_name = None
+        
+        

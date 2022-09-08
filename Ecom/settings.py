@@ -44,6 +44,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_yasg',
     'rest_framework_simplejwt',
+    'cart',
+    'products',
+    'checkout'
 ]
 
 AUTH_USER_MODEL = "core.Users"

@@ -11,12 +11,12 @@ from django.contrib import admin
 from core.models.implementation import (
     Users,
     TempCode,
-    Product,
-    Category,
-    Cart,
-    DeliveryCost,
-    Campaign,
-    Coupon
+    # Product,
+    # Category,
+    # Cart,
+    # DeliveryCost,
+    # Campaign,
+    # Coupon
 )
 
 # Register your models here.
@@ -30,26 +30,26 @@ class UsersAdmin(admin.ModelAdmin):
 class TempCodeAdmin(admin.ModelAdmin):
     pass
 
-@admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
-    pass
+# @admin.register(Product)
+# class ProductAdmin(admin.ModelAdmin):
+#     pass
 
-@admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
-    pass
+# @admin.register(Category)
+# class CategoryAdmin(admin.ModelAdmin):
+#     pass
 
-@admin.register(Cart)
-class CartAdmin(admin.ModelAdmin):
-    pass
+# @admin.register(Cart)
+# class CartAdmin(admin.ModelAdmin):
+#     pass
 
-@admin.register(DeliveryCost)
-class DeliverycostAmin(admin.ModelAdmin):
-    pass
+# @admin.register(DeliveryCost)
+# class DeliverycostAmin(admin.ModelAdmin):
+#     pass
 
-@admin.register(Campaign)
-class CampaignAdmin(admin.ModelAdmin):
-    pass
+# @admin.register(Campaign)
+# class CampaignAdmin(admin.ModelAdmin):
+#     pass
 
-@admin.register(Coupon)
-class CouponAdmin(admin.ModelAdmin):
-    pass
+# @admin.register(Coupon)
+# class CouponAdmin(admin.ModelAdmin):
+#     pass
